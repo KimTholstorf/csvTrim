@@ -49,12 +49,14 @@ docker build -t csvtrim .
 
 ### Run
 
-Mount a local folder to `/data` inside the container with `-v` to pass files in and retrieve output. All arguments work identically to the local script.
+Pull the image from GitHub Container Registry, then mount a local folder to `/data` with `-v` to pass files in and retrieve output. All arguments work identically to the local script.
 
 ```bash
+docker pull ghcr.io/kimtholstorf/csvtrim:latest
+
 docker run --rm -it \
   -v /your/data:/data \
-  csvtrim \
+  ghcr.io/kimtholstorf/csvtrim:latest \
   --input /data/export.csv --output /data/trimmed.csv
 ```
 
@@ -105,6 +107,7 @@ When deciding which filter settings to use, csvTrim applies this priority:
 ## Preset system
 
 Presets are stored in a JSON file (`presets.json` by default, next to the script). Each preset holds three values: the column to filter on, which values to keep, and which output columns to retain.
+The `"_default"` key names which preset to load when no `--preset` or individual flags are given. To change the default, edit the string value — no other changes needed.
 
 ### File format
 
@@ -132,10 +135,6 @@ Presets are stored in a JSON file (`presets.json` by default, next to the script
   }
 }
 ```
-
-### `_default` key
-
-The `"_default"` key names which preset to load when no `--preset` or individual flags are given. To change the default, edit the string value — no other changes needed.
 
 ### Using a preset
 
@@ -210,38 +209,38 @@ Same examples as above, run inside the container. Mount your data folder to `/da
 
 ```bash
 # Default run — auto-loads the '_default' preset
-docker run --rm -it -v /your/data:/data csvtrim \
+docker run --rm -it -v /your/data:/data ghcr.io/kimtholstorf/csvtrim:latest \
   --input /data/export.csv --output /data/trimmed.csv
 
 # Named preset
-docker run --rm -it -v /your/data:/data csvtrim \
+docker run --rm -it -v /your/data:/data ghcr.io/kimtholstorf/csvtrim:latest \
   --input /data/export.csv --output /data/trimmed.csv --preset Azure
 
 # Folder of CSVs + Excel output
-docker run --rm -it -v /your/data:/data csvtrim \
+docker run --rm -it -v /your/data:/data ghcr.io/kimtholstorf/csvtrim:latest \
   --input /data/monthly_exports --output /data/combined.csv --excel
 
 # Override only the filter values; other settings come from the default preset
-docker run --rm -it -v /your/data:/data csvtrim \
+docker run --rm -it -v /your/data:/data ghcr.io/kimtholstorf/csvtrim:latest \
   --input /data/export.csv --output /data/out.csv \
   --filter "['SaaS', 'Developer Tools', 'Containers', 'Databases']"
 
 # Fully custom filter (no preset)
-docker run --rm -it -v /your/data:/data csvtrim \
+docker run --rm -it -v /your/data:/data ghcr.io/kimtholstorf/csvtrim:latest \
   --input /data/export.csv --output /data/out.csv \
   --filter-column meterCategory \
   --filter "['Virtual Machines', 'Storage']" \
   --columns "['meterCategory', 'quantity', 'date']"
 
 # Save a preset to the mounted folder, then use it
-docker run --rm -it -v /your/data:/data csvtrim \
+docker run --rm -it -v /your/data:/data ghcr.io/kimtholstorf/csvtrim:latest \
   --preset-save Prod \
   --filter-column serviceFamily \
   --filter "['Compute', 'Networking']" \
   --columns "['serviceFamily', 'meterCategory', 'quantity', 'date']" \
   --preset-file /data/presets.json
 
-docker run --rm -it -v /your/data:/data csvtrim \
+docker run --rm -it -v /your/data:/data ghcr.io/kimtholstorf/csvtrim:latest \
   --input /data/export.csv --output /data/out.csv \
   --preset Prod --preset-file /data/presets.json
 ```
