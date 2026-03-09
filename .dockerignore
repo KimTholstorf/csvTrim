@@ -1,0 +1,10 @@
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.csv
+*.xlsx
+.git/
+.gitignore
+README.md
+setup_python_env.sh
