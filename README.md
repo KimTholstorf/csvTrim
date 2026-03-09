@@ -39,6 +39,71 @@ The setup script installs [uv](https://github.com/astral-sh/uv) if it isn't alre
 
 ---
 
+## Docker
+
+### Build
+
+```bash
+docker build -t csvtrim .
+```
+
+### Run
+
+All arguments are passed directly after the image name, just as you would run the script locally. Mount a local folder to `/data` inside the container with `-v` to pass files in and retrieve output.
+
+```bash
+# Single file — auto-loads the default preset
+docker run --rm -it \
+  -v /your/data:/data \
+  csvtrim \
+  --input /data/export.csv --output /data/trimmed.csv
+
+# Named preset
+docker run --rm -it \
+  -v /your/data:/data \
+  csvtrim \
+  --input /data/export.csv --output /data/trimmed.csv --preset Azure
+
+# Folder of CSVs + Excel output
+docker run --rm -it \
+  -v /your/data:/data \
+  csvtrim \
+  --input /data/exports --output /data/trimmed.csv --excel
+```
+
+The `-it` flag gives csvTrim a real terminal so the progress bar and ANSI output render correctly. `--rm` removes the container automatically when it exits.
+
+### Using a custom presets file
+
+The default `presets.json` is baked into the image at build time. To use your own presets file, place it in your mounted data folder and point `--preset-file` at it:
+
+```bash
+docker run --rm -it \
+  -v /your/data:/data \
+  csvtrim \
+  --input /data/export.csv --output /data/trimmed.csv \
+  --preset-file /data/presets.json --preset GCP
+```
+
+### Saving presets from Docker
+
+`--preset-save` normally writes to the `presets.json` inside the container, which is discarded when the container exits. To save presets persistently, mount a `presets.json` from your local machine and specify it with `--preset-file`:
+
+```bash
+docker run --rm -it \
+  -v /your/data:/data \
+  csvtrim \
+  --preset-save GCP \
+  --filter-column "service.description" \
+  --filter "['Compute Engine', 'Cloud Storage', 'BigQuery']" \
+  --columns "['billing_account_id', 'service.description', 'cost', 'currency']" \
+  --preset-file /data/presets.json
+```
+
+The preset is written to `/data/presets.json` on your local machine and survives the container exit.
+
+---
+
 ## Quick start
 
 ```bash
