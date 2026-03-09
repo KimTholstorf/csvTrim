@@ -1,0 +1,30 @@
+# Created by codeshack.io
+
+### macOS ###
+.DS_Store
+.Spotlight-V100
+
+### Python ###
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+### VS Code ###
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+### output and other files ###
+*.csv
+*.xlsx
+*.xls
+*.zip
+.git/
+.claude/

@@ -1,0 +1,22 @@
+{
+  "_default": "Azure",
+  "Azure": {
+    "filter_column": "serviceFamily",
+    "filter": ["Compute", "Networking", "Storage"],
+    "columns": [
+      "serviceFamily",
+      "meterCategory",
+      "meterSubCategory",
+      "meterName",
+      "ProductName",
+      "productOrderName",
+      "meterRegion",
+      "quantity",
+      "pricingModel",
+      "term",
+      "unitOfMeasure",
+      "ResourceId",
+      "date"
+    ]
+  }
+}
