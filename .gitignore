@@ -1,10 +1,13 @@
 # Created by codeshack.io
 
 ### macOS ###
-.DS_Store
+**/.DS_Store
 .Spotlight-V100
 
 ### Python ###
+__pycache__/
+*.pyc
+*.pyo
 .env
 .venv
 env/
@@ -26,7 +29,6 @@ venv.bak/
 *.xlsx
 *.xls
 *.zip
-.git/
 .claude/
 
 ### local tools (not part of the Docker image) ###

@@ -35,7 +35,7 @@ bash setup_python_env.sh
 source .venv/bin/activate
 ```
 
-The setup script installs [uv](https://github.com/astral-sh/uv) if it isn't already present (via Homebrew if available, otherwise via curl).
+The setup script installs [uv](https://github.com/astral-sh/uv) if it isn't already present (via [Homebrew](https://formulae.brew.sh/formula/uv) if available, otherwise via curl).
 
 ---
 
@@ -49,58 +49,16 @@ docker build -t csvtrim .
 
 ### Run
 
-All arguments are passed directly after the image name, just as you would run the script locally. Mount a local folder to `/data` inside the container with `-v` to pass files in and retrieve output.
+Mount a local folder to `/data` inside the container with `-v` to pass files in and retrieve output. All arguments work identically to the local script.
 
 ```bash
-# Single file — auto-loads the default preset
 docker run --rm -it \
   -v /your/data:/data \
   csvtrim \
   --input /data/export.csv --output /data/trimmed.csv
-
-# Named preset
-docker run --rm -it \
-  -v /your/data:/data \
-  csvtrim \
-  --input /data/export.csv --output /data/trimmed.csv --preset Azure
-
-# Folder of CSVs + Excel output
-docker run --rm -it \
-  -v /your/data:/data \
-  csvtrim \
-  --input /data/exports --output /data/trimmed.csv --excel
 ```
 
 The `-it` flag gives csvTrim a real terminal so the progress bar and ANSI output render correctly. `--rm` removes the container automatically when it exits.
-
-### Using a custom presets file
-
-The default `presets.json` is baked into the image at build time. To use your own presets file, place it in your mounted data folder and point `--preset-file` at it:
-
-```bash
-docker run --rm -it \
-  -v /your/data:/data \
-  csvtrim \
-  --input /data/export.csv --output /data/trimmed.csv \
-  --preset-file /data/presets.json --preset GCP
-```
-
-### Saving presets from Docker
-
-`--preset-save` normally writes to the `presets.json` inside the container, which is discarded when the container exits. To save presets persistently, mount a `presets.json` from your local machine and specify it with `--preset-file`:
-
-```bash
-docker run --rm -it \
-  -v /your/data:/data \
-  csvtrim \
-  --preset-save GCP \
-  --filter-column "service.description" \
-  --filter "['Compute Engine', 'Cloud Storage', 'BigQuery']" \
-  --columns "['billing_account_id', 'service.description', 'cost', 'currency']" \
-  --preset-file /data/presets.json
-```
-
-The preset is written to `/data/presets.json` on your local machine and survives the container exit.
 
 ---
 
@@ -242,6 +200,50 @@ python3 csvTrim.py --preset-save Prod \
   --columns "['serviceFamily', 'meterCategory', 'quantity', 'date']"
 
 python3 csvTrim.py --input data.csv --output out.csv --preset Prod
+```
+
+---
+
+## Docker examples
+
+Same examples as above, run inside the container. Mount your data folder to `/data` and prefix paths accordingly. Use `--preset-file /data/presets.json` when saving or loading presets so changes persist to your local machine.
+
+```bash
+# Default run — auto-loads the '_default' preset
+docker run --rm -it -v /your/data:/data csvtrim \
+  --input /data/export.csv --output /data/trimmed.csv
+
+# Named preset
+docker run --rm -it -v /your/data:/data csvtrim \
+  --input /data/export.csv --output /data/trimmed.csv --preset Azure
+
+# Folder of CSVs + Excel output
+docker run --rm -it -v /your/data:/data csvtrim \
+  --input /data/monthly_exports --output /data/combined.csv --excel
+
+# Override only the filter values; other settings come from the default preset
+docker run --rm -it -v /your/data:/data csvtrim \
+  --input /data/export.csv --output /data/out.csv \
+  --filter "['SaaS', 'Developer Tools', 'Containers', 'Databases']"
+
+# Fully custom filter (no preset)
+docker run --rm -it -v /your/data:/data csvtrim \
+  --input /data/export.csv --output /data/out.csv \
+  --filter-column meterCategory \
+  --filter "['Virtual Machines', 'Storage']" \
+  --columns "['meterCategory', 'quantity', 'date']"
+
+# Save a preset to the mounted folder, then use it
+docker run --rm -it -v /your/data:/data csvtrim \
+  --preset-save Prod \
+  --filter-column serviceFamily \
+  --filter "['Compute', 'Networking']" \
+  --columns "['serviceFamily', 'meterCategory', 'quantity', 'date']" \
+  --preset-file /data/presets.json
+
+docker run --rm -it -v /your/data:/data csvtrim \
+  --input /data/export.csv --output /data/out.csv \
+  --preset Prod --preset-file /data/presets.json
 ```
 
 ---
