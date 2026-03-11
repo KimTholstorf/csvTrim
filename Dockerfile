@@ -8,7 +8,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the script and default presets
-COPY csvTrim.py presets.json ./
+COPY csvtrim/csvTrim.py csvtrim/presets.json ./
 
 # Mount your CSV files here at runtime: -v /your/data:/data
 VOLUME ["/data"]

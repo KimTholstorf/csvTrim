@@ -39,6 +39,25 @@ The setup script installs [uv](https://github.com/astral-sh/uv) if it isn't alre
 
 ---
 
+## Install via pip
+
+```bash
+pip install csvtrim
+
+# or, for an isolated install that won't affect your system Python:
+pipx install csvtrim
+```
+
+After installation, `csvtrim` is available as a shell command — no venv activation needed:
+
+```bash
+csvtrim --input data.csv --output trimmed.csv
+```
+
+The default `presets.json` is bundled with the package. To use a custom presets file, pass `--preset-file /path/to/your_presets.json`.
+
+---
+
 ## Docker
 
 ### Build

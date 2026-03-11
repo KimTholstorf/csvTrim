@@ -8,3 +8,7 @@ __pycache__/
 .gitignore
 README.md
 setup_python_env.sh
+dist/
+build/
+*.egg-info/
+pyproject.toml

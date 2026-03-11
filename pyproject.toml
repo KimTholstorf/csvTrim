@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "csvtrim"
+version = "1.0.1"
+description = "Filter and trim large CSV files by column values — keep only the rows and columns you need."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.10"
+dependencies = [
+    "pandas",
+    "openpyxl",
+]
+keywords = ["csv", "data", "filter", "trim", "azure", "billing"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Environment :: Console",
+    "Topic :: Utilities",
+]
+
+[project.urls]
+Homepage = "https://github.com/kimtholstorf/csvtrim"
+Repository = "https://github.com/kimtholstorf/csvtrim"
+
+[project.scripts]
+csvtrim = "csvtrim.csvTrim:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["csvtrim*"]
+
+[tool.setuptools.package-data]
+csvtrim = ["presets.json"]

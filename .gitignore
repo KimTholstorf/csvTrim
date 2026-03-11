@@ -24,6 +24,11 @@ venv.bak/
 !.vscode/extensions.json
 *.code-workspace
 
+### build and distribution ###
+dist/
+build/
+*.egg-info/
+
 ### output and other files ###
 *.csv
 *.xlsx
