@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="images/beaver_logo_small.png"  alt="csvTrim Logo"/>
+  <img src="images/app_icons/icon_256.png"  alt="csvTrim Logo"/>
   <h1 align="center">csvTrim</h1>
   <h4 align="center">Filter and trim large CSV files by column values</h4>
 </div>
@@ -10,7 +10,7 @@
   <img alt="GitHub Actions Homebrew Status" src="https://img.shields.io/github/actions/workflow/status/KimTholstorf/csvTrim/homebrew-publish.yml">
 </div>
 
-csvTrim processes a single file or an entire folder of CSVs in one pass and keep only the rows and columns you specify. It is optimised for large exports (e.g. Azure billing exports) but works with any structured CSV. Results can also be exported to Excel.
+csvTrim processes a single file or an entire folder of CSVs in one pass and keeps only the rows and columns you specify. It is optimised for large exports (e.g. Azure billing exports) but works with any structured CSV. Results can also be exported to Excel.
 
 ## Features
 
@@ -68,28 +68,6 @@ After installation via [Homebrew Tap](https://github.com/KimTholstorf/homebrew-c
 
 ---
 
-### From source
-Requirements:
-- Python 3.9+
-- `pandas`
-- `openpyxl` (only needed for `--excel`)
-
-```bash
-# Clone the repo
-git clone https://github.com/KimTholstorf/csvTrim.git
-cd csvTrim
-
-# One-time setup (creates .venv with pandas + openpyxl)
-bash setup_python_env.sh
-
-# Activate the environment
-source .venv/bin/activate
-```
-
-The setup script installs [uv](https://github.com/astral-sh/uv) if it isn't already present (via [Homebrew](https://formulae.brew.sh/formula/uv) if available, otherwise via curl).
-
----
-
 ### Docker
 
 #### Build
@@ -112,6 +90,28 @@ docker run --rm -it \
 ```
 
 The `-it` flag gives csvTrim a real terminal so the progress bar and ANSI output render correctly. `--rm` removes the container automatically when it exits.
+
+---
+
+### From source
+Requirements:
+- Python 3.9+
+- `pandas`
+- `openpyxl` (only needed for `--excel`)
+
+```bash
+# Clone the repo
+git clone https://github.com/KimTholstorf/csvTrim.git
+cd csvTrim
+
+# One-time setup (creates .venv with pandas + openpyxl)
+bash setup_python_env.sh
+
+# Activate the environment
+source .venv/bin/activate
+```
+
+The setup script installs [uv](https://github.com/astral-sh/uv) if it isn't already present (via [Homebrew](https://formulae.brew.sh/formula/uv) if available, otherwise via curl).
 
 ---
 
