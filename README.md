@@ -286,8 +286,4 @@ docker run --rm -it -v /your/data:/data ghcr.io/kimtholstorf/csvtrim:latest \
 ## Output
 
 After processing, csvTrim prints a summary:
-<div align="center">
-  <img src="images/csvtrim_demo.gif"  alt="csvTrim Demo"/>
-</div>
-
 ![asciinema](images/csvtrim_demo.gif)
