@@ -1,5 +1,7 @@
 # csvTrim
 
+![csvTrim](images/beaver_logo_small.png)
+
 Filter and trim large CSV files by column values — keep only the rows and columns you need.
 
 csvTrim processes a single file or an entire folder of CSVs in one pass. It is optimised for large billing exports (e.g. Azure cost data) but works with any structured CSV. Results can also be exported to Excel.
@@ -19,15 +21,60 @@ csvTrim processes a single file or an entire folder of CSVs in one pass. It is o
 
 ---
 
-## Requirements
+## Quick start
 
+```bash
+# install via Homebrew Tap
+brew tap KimTholstorf/csvtrim
+brew install csvtrim
+
+# Use the default preset, trim a single file
+csvtrim --input data.csv --output trimmed.csv
+
+# Process an entire folder, also produce Excel output
+csvtrim --input ./exports --output trimmed.csv --excel
+
+# Use a named preset
+csvtrim --input data.csv --output trimmed.csv --preset Azure
+```
+The default `presets.json` is bundled with the package. To use a custom presets file, pass `--preset-file /path/to/your_presets.json`.
+
+---
+
+## Installation
+### Homebrew
+
+```bash
+brew tap KimTholstorf/csvtrim
+brew install csvtrim
+```
+
+---
+
+### Python package
+
+```bash
+pip install csvtrim
+
+#or use pipx or uv for an isolated install not affecting your system Python:
+pipx install csvtrim
+uv tool install csvtrim
+```
+After installation via [Homebrew Tap](https://github.com/KimTholstorf/homebrew-csvtrim) or [pip](https://pypi.org/project/csvtrim/), `csvtrim` is available as a shell command — no venv activation needed.
+
+---
+
+### From source
+Requirements:
 - Python 3.9+
 - `pandas`
 - `openpyxl` (only needed for `--excel`)
 
-### Install
-
 ```bash
+# Clone the repo
+git clone https://github.com/KimTholstorf/csvTrim.git
+cd csvTrim
+
 # One-time setup (creates .venv with pandas + openpyxl)
 bash setup_python_env.sh
 
@@ -39,34 +86,15 @@ The setup script installs [uv](https://github.com/astral-sh/uv) if it isn't alre
 
 ---
 
-## Install via pip
+### Docker
 
-```bash
-pip install csvtrim
-
-# or, for an isolated install that won't affect your system Python:
-pipx install csvtrim
-```
-
-After installation, `csvtrim` is available as a shell command — no venv activation needed:
-
-```bash
-csvtrim --input data.csv --output trimmed.csv
-```
-
-The default `presets.json` is bundled with the package. To use a custom presets file, pass `--preset-file /path/to/your_presets.json`.
-
----
-
-## Docker
-
-### Build
+#### Build
 
 ```bash
 docker build -t csvtrim .
 ```
 
-### Run
+#### Run
 
 Pull the image from GitHub Container Registry, then mount a local folder to `/data` with `-v` to pass files in and retrieve output. All arguments work identically to the local script.
 
@@ -80,21 +108,6 @@ docker run --rm -it \
 ```
 
 The `-it` flag gives csvTrim a real terminal so the progress bar and ANSI output render correctly. `--rm` removes the container automatically when it exits.
-
----
-
-## Quick start
-
-```bash
-# Use the default preset, trim a single file
-python3 csvTrim.py --input data.csv --output trimmed.csv
-
-# Process an entire folder, also produce Excel output
-python3 csvTrim.py --input ./exports --output trimmed.csv --excel
-
-# Use a named preset
-python3 csvTrim.py --input data.csv --output trimmed.csv --preset Azure
-```
 
 ---
 
@@ -158,7 +171,7 @@ The `"_default"` key names which preset to load when no `--preset` or individual
 ### Using a preset
 
 ```bash
-python3 csvTrim.py --input data.csv --output out.csv --preset Azure
+csvtrim --input data.csv --output out.csv --preset Azure
 ```
 
 ### Saving a new preset
@@ -167,13 +180,13 @@ Use `--preset-save` together with the individual flags. No trimming is performed
 
 ```bash
 # Save a brand-new preset
-python3 csvTrim.py --preset-save GCP \
+csvtrim --preset-save GCP \
   --filter-column "service.description" \
   --filter "['Compute Engine', 'Cloud Storage', 'BigQuery']" \
   --columns "['billing_account_id', 'service.description', 'cost', 'currency']"
 
 # Copy an existing preset under a new name
-python3 csvTrim.py --preset Azure --preset-save AzureBackup
+csvtrim --preset Azure --preset-save AzureBackup
 ```
 
 If the preset name already exists it is overwritten. The script prints a confirmation showing what was saved.
@@ -181,7 +194,7 @@ If the preset name already exists it is overwritten. The script prints a confirm
 ### Using a custom presets file
 
 ```bash
-python3 csvTrim.py --input data.csv --output out.csv \
+csvtrim --input data.csv --output out.csv \
   --preset MyPreset --preset-file /path/to/my_presets.json
 ```
 
@@ -193,36 +206,36 @@ python3 csvTrim.py --input data.csv --output out.csv \
 
 ```bash
 # Default run — auto-loads the '_default' preset
-python3 csvTrim.py --input data.csv --output trimmed.csv
+csvtrim --input data.csv --output trimmed.csv
 
 # Named preset
-python3 csvTrim.py --input data.csv --output trimmed.csv --preset Azure
+csvtrim --input data.csv --output trimmed.csv --preset Azure
 
 # Folder of CSVs + Excel output
-python3 csvTrim.py --input ./monthly_exports --output combined.csv --excel
+csvtrim --input ./monthly_exports --output combined.csv --excel
 
 # Override only the filter values; other settings come from the default preset
-python3 csvTrim.py --input data.csv --output out.csv \
+csvtrim --input data.csv --output out.csv \
   --filter "['SaaS', 'Developer Tools', 'Containers', 'Databases']"
 
 # Fully custom filter (no preset)
-python3 csvTrim.py --input data.csv --output out.csv \
+csvtrim --input data.csv --output out.csv \
   --filter-column meterCategory \
   --filter "['Virtual Machines', 'Storage']" \
   --columns "['meterCategory', 'quantity', 'date']"
 
 # Save a preset then use it
-python3 csvTrim.py --preset-save Prod \
+csvtrim --preset-save Prod \
   --filter-column serviceFamily \
   --filter "['Compute', 'Networking']" \
   --columns "['serviceFamily', 'meterCategory', 'quantity', 'date']"
 
-python3 csvTrim.py --input data.csv --output out.csv --preset Prod
+csvtrim --input data.csv --output out.csv --preset Prod
 ```
 
 ---
 
-## Docker examples
+### Docker examples
 
 Same examples as above, run inside the container. Mount your data folder to `/data` and prefix paths accordingly. Use `--preset-file /data/presets.json` when saving or loading presets so changes persist to your local machine.
 
@@ -285,5 +298,3 @@ After processing, csvTrim prints a summary:
     Storage       23,643
   ══════════════════════════════════════════════════════════
 ```
-
-Skipped files (missing columns, encoding errors, etc.) are listed below the summary with the reason.
