@@ -1,18 +1,14 @@
-![csvTrim](images/beaver_logo_small.png)
-
 <div align="center">
   <img src="images/beaver_logo_small.png"  alt="csvTrim Logo"/>
   <h1 align="center">csvTrim</h1>
   <h4 align="center">Filter and trim large CSV files by column values</h4>
 </div>
 
-
 <div align="center">
   <img alt="GitHub Actions Docker Status" src="https://img.shields.io/github/actions/workflow/status/KimTholstorf/csvTrim/docker-publish.yml">
   <img alt="GitHub Actions PyPi Status" src="https://img.shields.io/github/actions/workflow/status/KimTholstorf/csvTrim/pypi-publish.yml">
   <img alt="GitHub Actions Homebrew Status" src="https://img.shields.io/github/actions/workflow/status/KimTholstorf/csvTrim/homebrew-publish.yml">
 </div>
----
 
 csvTrim processes a single file or an entire folder of CSVs in one pass and keep only the rows and columns you specify. It is optimised for large exports (e.g. Azure billing exports) but works with any structured CSV. Results can also be exported to Excel.
 
