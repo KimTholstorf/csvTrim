@@ -287,18 +287,4 @@ docker run --rm -it -v /your/data:/data ghcr.io/kimtholstorf/csvtrim:latest \
 
 After processing, csvTrim prints a summary:
 
-```
-  ══════════════════════════════════════════════════════════
-  Files:    3       Rows in:     2,841,504   Elapsed: 8.3s
-  ──────────────────────────────────────────────────────────
-  Columns kept:        13
-  Columns removed:     51     (79.7%)
-  Rows out:           312,847
-  Rows removed:     2,528,657  (89.0% reduction)
-  ──────────────────────────────────────────────────────────
-  Rows by serviceFamily:
-    Compute      241,003
-    Networking    48,201
-    Storage       23,643
-  ══════════════════════════════════════════════════════════
-```
+![asciinema](images/app_icons/csvtrim_demo)
