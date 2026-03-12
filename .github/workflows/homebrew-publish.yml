@@ -13,13 +13,46 @@ jobs:
       - name: Wait for PyPI to process the package
         run: sleep 120
 
-      - name: Update formula in tap
-        uses: mislav/bump-homebrew-formula-action@v3
+      - name: Checkout tap repo
+        uses: actions/checkout@v4
         with:
-          formula-name: csvtrim
-          formula-path: Formula/csvtrim.rb
-          homebrew-tap: KimTholstorf/homebrew-csvtrim
-          tag-name: ${{ github.ref_name }}
-          download-url: https://files.pythonhosted.org/packages/source/c/csvtrim/csvtrim-$VERSION.tar.gz
-        env:
-          COMMITTER_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          repository: KimTholstorf/homebrew-csvtrim
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+
+      - name: Update formula
+        run: |
+          VERSION="${{ github.ref_name }}"
+          VERSION="${VERSION#v}"
+
+          PYPI_JSON=$(curl -s "https://pypi.org/pypi/csvtrim/${VERSION}/json")
+
+          URL=$(echo "$PYPI_JSON" | python3 -c "
+          import json, sys
+          data = json.load(sys.stdin)
+          for f in data['urls']:
+              if f['filename'].endswith('.tar.gz'):
+                  print(f['url'])
+                  break
+          ")
+
+          SHA256=$(echo "$PYPI_JSON" | python3 -c "
+          import json, sys
+          data = json.load(sys.stdin)
+          for f in data['urls']:
+              if f['filename'].endswith('.tar.gz'):
+                  print(f['digests']['sha256'])
+                  break
+          ")
+
+          sed -i "s|url \".*\"|url \"${URL}\"|" Formula/csvtrim.rb
+          sed -i "s|sha256 \".*\"|sha256 \"${SHA256}\"|" Formula/csvtrim.rb
+
+      - name: Commit and push
+        run: |
+          VERSION="${{ github.ref_name }}"
+          VERSION="${VERSION#v}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Formula/csvtrim.rb
+          git commit -m "Update csvtrim to ${VERSION}"
+          git push
