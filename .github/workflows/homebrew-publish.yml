@@ -1,23 +1,25 @@
 name: Update Homebrew Formula
 
 on:
-  workflow_run:
-    workflows: ["Publish to PyPI"]
-    types: [completed]
+  push:
+    tags:
+      - 'v*'
 
 jobs:
   update-formula:
     runs-on: ubuntu-latest
-    if: github.event.workflow_run.conclusion == 'success'
 
     steps:
+      - name: Wait for PyPI to process the package
+        run: sleep 120
+
       - name: Update formula in tap
         uses: mislav/bump-homebrew-formula-action@v3
         with:
           formula-name: csvtrim
           formula-path: Formula/csvtrim.rb
           homebrew-tap: KimTholstorf/homebrew-csvtrim
-          tag-name: ${{ github.event.workflow_run.head_branch }}
+          tag-name: ${{ github.ref_name }}
           download-url: https://files.pythonhosted.org/packages/source/c/csvtrim/csvtrim-$VERSION.tar.gz
         env:
           COMMITTER_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
