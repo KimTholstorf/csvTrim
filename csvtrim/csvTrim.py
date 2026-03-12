@@ -10,7 +10,7 @@ import time
 
 import pandas as pd
 
-VERSION = "1.0.3"
+VERSION = "1.0.4"
 PRESETS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "presets.json")
 EXCEL_ROW_LIMIT = 1_048_576
 
