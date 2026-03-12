@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="images/app_icons/icon_256.png"  alt="csvTrim Logo"/>
+  <img src="images/logo_gh.png"  alt="csvTrim Logo"/>
   <h1 align="center">csvTrim</h1>
   <h4 align="center">Filter and trim large CSV files by column values</h4>
 </div>
@@ -12,7 +12,7 @@
 
 csvTrim processes a single file or an entire folder of CSVs in one pass and keeps only the rows and columns you specify. It is optimised for large exports (e.g. Azure billing exports) but works with any structured CSV. Results can also be exported to Excel.
 
-## Features
+## 🪚Features
 
 - **Row filtering** — keep only rows whose filter column matches a list of values
 - **Column trimming** — drop every column not in your keep list
@@ -25,7 +25,7 @@ csvTrim processes a single file or an entire folder of CSVs in one pass and keep
 
 ---
 
-## Quick start
+## 👷Quick start
 
 ```bash
 # install via Homebrew Tap
@@ -45,7 +45,7 @@ The default `presets.json` is bundled with the package. To use a custom presets 
 
 ---
 
-## Installation
+## 🏗️Installation
 ### Homebrew
 
 ```bash
@@ -115,7 +115,7 @@ The setup script installs [uv](https://github.com/astral-sh/uv) if it isn't alre
 
 ---
 
-## CLI reference
+## 🚩CLI reference
 
 | Argument | Short | Description |
 |---|---|---|
@@ -140,7 +140,7 @@ When deciding which filter settings to use, csvTrim applies this priority:
 
 ---
 
-## Preset system
+## 📋Preset system
 
 Presets are stored in a JSON file (`presets.json` by default, next to the script). Each preset holds three values: the column to filter on, which values to keep, and which output columns to retain.
 The `"_default"` key names which preset to load when no `--preset` or individual flags are given. To change the default, edit the string value — no other changes needed.
@@ -206,7 +206,7 @@ csvtrim --input data.csv --output out.csv \
 
 ---
 
-## Examples
+## 👨‍🏫Examples
 
 ```bash
 # Default run — auto-loads the '_default' preset
@@ -283,7 +283,7 @@ docker run --rm -it -v /your/data:/data ghcr.io/kimtholstorf/csvtrim:latest \
 
 ---
 
-## Output
+## 🍿Demo
 
 After processing, csvTrim prints a summary:
 ![asciinema](images/csvtrim_demo.gif)
