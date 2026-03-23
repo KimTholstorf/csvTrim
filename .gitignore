@@ -26,6 +26,7 @@ venv.bak/
 dist/
 build/
 *.egg-info/
+uv.lock
 
 ### output and other files ###
 *.csv
