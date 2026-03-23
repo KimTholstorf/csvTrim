@@ -5,9 +5,15 @@
 </div>
 
 <div align="center">
-  <img alt="GitHub Actions Docker Status" src="https://img.shields.io/github/actions/workflow/status/KimTholstorf/csvTrim/docker-publish.yml?label=docker&cacheSeconds=0">
-  <img alt="GitHub Actions PyPi Status" src="https://img.shields.io/github/actions/workflow/status/KimTholstorf/csvTrim/pypi-publish.yml?label=pypi&cacheSeconds=0">
-  <img alt="GitHub Actions Homebrew Status" src="https://img.shields.io/badge/brew-online-brightgreen">
+  <a href="https://github.com/KimTholstorf/csvTrim/pkgs/container/csvtrim" target="_blank" rel="noopener">
+    <img alt="GitHub Actions Docker Status" src="https://img.shields.io/github/actions/workflow/status/KimTholstorf/csvTrim/docker-publish.yml?label=docker&cacheSeconds=0">
+  </a>
+  <a href="https://pypi.org/project/csvtrim/" target="_blank" rel="noopener">
+    <img alt="GitHub Actions PyPi Status" src="https://img.shields.io/github/actions/workflow/status/KimTholstorf/csvTrim/pypi-publish.yml?label=pypi&cacheSeconds=0">
+  </a>
+  <a href="https://github.com/KimTholstorf/homebrew-csvtrim" target="_blank" rel="noopener">
+    <img alt="GitHub Actions Homebrew Status" src="https://img.shields.io/badge/brew-online-brightgreen">
+  </a>
 </div>
 <br>
 csvTrim processes a single file or an entire folder of CSVs in one pass and keeps only the rows and columns you specify. It is optimised for large exports (e.g. Azure billing exports) but works with any structured CSV. Results can also be exported to Excel.
