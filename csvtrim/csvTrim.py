@@ -10,7 +10,7 @@ import time
 
 import pandas as pd
 
-VERSION = "1.0.4"
+VERSION = "1.0.5"
 PRESETS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "presets.json")
 EXCEL_ROW_LIMIT = 1_048_576
 
@@ -56,6 +56,85 @@ def end_progress():
 # ---------------------------------------------------------------------------
 
 
+def _print_columns(cols, term_width):
+    """Print a list of column names in up to 3 terminal-fitted columns."""
+    if not cols:
+        return
+    col_w  = max(len(c) for c in cols) + 4   # padding between columns
+    usable = term_width - 2                   # 2 chars for leading "  "
+    n_cols = min(3, max(1, usable // col_w))  # 1–3 columns
+    rows   = (len(cols) + n_cols - 1) // n_cols
+    for r in range(rows):
+        line = "  "
+        for c in range(n_cols):
+            idx = r + c * rows
+            if idx < len(cols):
+                line += cols[idx].ljust(col_w)
+        print(line.rstrip())
+
+
+def _run_inspect(csv_files, total_files):
+    """Header-scan mode: list all column names found across input files and exit."""
+    import collections
+    W  = _term_width()
+    dw = W - 2
+
+    def sep(char="═"): print(f"  {char * dw}")
+    def rule():        print(f"  {'─' * dw}")
+    def blank():       print()
+
+    if total_files > 1:
+        input_label = os.path.basename(os.path.dirname(os.path.abspath(csv_files[0])))
+    else:
+        input_label = os.path.basename(os.path.abspath(csv_files[0]))
+
+    sys.stdout.write("\033[2J\033[H")
+    sys.stdout.flush()
+    blank()
+    print(f'  csvTrim --inspect  ·  {input_label}  ·  {total_files} file{"s" if total_files > 1 else ""}')
+    print(f"  {'─' * (W - 4)}")
+    blank()
+
+    col_counts = collections.Counter()
+    skipped    = []
+
+    for csv_file in csv_files:
+        try:
+            header = (
+                pd.read_csv(csv_file, nrows=0, encoding="utf-8", on_bad_lines="skip")
+                .columns.str.strip()
+                .tolist()
+            )
+            for col in header:
+                col_counts[col] += 1
+        except Exception as ex:
+            skipped.append((os.path.basename(csv_file), str(ex)))
+
+    all_cols     = sorted(c for c, n in col_counts.items() if n == total_files)
+    partial_cols = sorted((c, n) for c, n in col_counts.items() if n < total_files)
+
+    sep()
+    print(f'  In all {total_files} file{"s" if total_files > 1 else ""} ({len(all_cols)} columns)')
+    rule()
+    _print_columns(all_cols, W)
+    sep()
+
+    if partial_cols:
+        blank()
+        sep()
+        print("  Not in all files")
+        rule()
+        for col, n in partial_cols:
+            print(f"  {col:<40}  {n} / {total_files} files")
+        sep()
+
+    blank()
+    for fname, reason in skipped:
+        print(f"  Skipped {fname}: {reason}")
+    if skipped:
+        blank()
+
+
 def get_csv_files(input_path):
     if os.path.isfile(input_path):
         return [input_path]
@@ -89,17 +168,20 @@ def save_preset(name, filter_col, filter_vals, columns, preset_file):
         with open(preset_file, "r", encoding="utf-8") as f:
             presets = json.load(f)
     overwriting = name in presets
-    presets[name] = {
-        "filter_column": filter_col,
-        "filter": filter_vals,
-        "columns": columns,
-    }
+    preset_data = {"columns": columns}
+    if filter_col is not None:
+        preset_data["filter_column"] = filter_col
+    if filter_vals is not None:
+        preset_data["filter"] = filter_vals
+    presets[name] = preset_data
     with open(preset_file, "w", encoding="utf-8") as f:
         json.dump(presets, f, indent=2)
     action = "Overwritten" if overwriting else "Saved"
     print(f"  {action} preset '{name}' → {preset_file}")
-    print(f"  Filter column: {filter_col}")
-    print(f"  Filter values: {', '.join(filter_vals)}")
+    if filter_col:
+        print(f"  Filter column: {filter_col}")
+    if filter_vals:
+        print(f"  Filter values: {', '.join(filter_vals)}")
     print(f"  Columns:       {', '.join(columns)}")
 
 
@@ -116,14 +198,13 @@ def load_preset(name, preset_file):
             f"       Available presets: {available}",
         )
     p = presets[name]
-    for key in ("filter_column", "filter", "columns"):
-        if key not in p:
-            fatal(f"ERROR: Preset '{name}' is missing required key: '{key}'")
-    if not isinstance(p["filter"], list):
-        fatal(f"ERROR: Preset '{name}': 'filter' must be a list.")
+    if "columns" not in p:
+        fatal(f"ERROR: Preset '{name}' is missing required key: 'columns'")
     if not isinstance(p["columns"], list):
         fatal(f"ERROR: Preset '{name}': 'columns' must be a list.")
-    return p["filter_column"], p["filter"], p["columns"]
+    if "filter" in p and not isinstance(p["filter"], list):
+        fatal(f"ERROR: Preset '{name}': 'filter' must be a list.")
+    return p.get("filter_column"), p.get("filter"), p["columns"]
 
 
 def load_default_preset(preset_file):
@@ -181,6 +262,12 @@ def main():
         "--version", "-v", action="version", version=f"csvTrim {VERSION}"
     )
     parser.add_argument(
+        "--inspect",
+        "-ins",
+        action="store_true",
+        help="List all column names found in the input file(s) and exit (no trimming performed)",
+    )
+    parser.add_argument(
         "--input",
         "-i",
         default=None,
@@ -201,14 +288,14 @@ def main():
         help="Also convert the output CSV to Excel (.xlsx)",
     )
     parser.add_argument(
-        "--filter",
-        "-f",
+        "--columns",
+        "-c",
         default=None,
         metavar="LIST",
         help=(
-            "Values to keep as a Python list, matched against --filter-column. "
+            "Columns to keep as a Python list. "
             "Omit to use the default preset. "
-            "Example: \"['SaaS', 'Developer Tools', 'Containers', 'Databases']\""
+            "Example: \"['meterCategory', 'quantity']\""
         ),
     )
     parser.add_argument(
@@ -219,14 +306,14 @@ def main():
         help=("Column to filter values against. Omit to use the default preset."),
     )
     parser.add_argument(
-        "--columns",
-        "-c",
+        "--filter",
+        "-f",
         default=None,
         metavar="LIST",
         help=(
-            "Columns to keep as a Python list. "
+            "Values to keep as a Python list, matched against --filter-column. "
             "Omit to use the default preset. "
-            "Example: \"['meterCategory', 'quantity']\""
+            "Example: \"['SaaS', 'Developer Tools', 'Containers', 'Databases']\""
         ),
     )
     parser.add_argument(
@@ -267,6 +354,14 @@ def main():
     )
     args = parser.parse_args()
 
+    # Inspect mode — no preset or output needed
+    if args.inspect:
+        if not args.input:
+            parser.error("--input is required with --inspect")
+        csv_files = get_csv_files(args.input)
+        _run_inspect(csv_files, len(csv_files))
+        sys.exit(0)
+
     # Resolve filter config: explicit preset, auto-default, or individual flags
     preset_file = args.preset_file if args.preset_file else PRESETS_FILE
     if args.preset is not None:
@@ -279,30 +374,42 @@ def main():
             preset_file
         )
     else:
-        # One or more individual flags given: load _default as base, apply overrides
+        # One or more individual flags given
         resolved_preset = None
-        _, base_col, base_vals, base_cols = load_default_preset(preset_file)
-        filter_vals = (
-            parse_list_arg(
-                args.filter,
-                "--filter",
-                "\"['SaaS', 'Developer Tools', 'Containers', 'Databases']\"",
-            )
-            if args.filter is not None
-            else base_vals
-        )
-        filter_col = args.filter_column if args.filter_column is not None else base_col
-        columns = (
-            parse_list_arg(
+        has_filter_flag = args.filter is not None or args.filter_column is not None
+        if args.columns is not None and not has_filter_flag:
+            # Columns only — no filter
+            filter_col = None
+            filter_vals = None
+            columns = parse_list_arg(
                 args.columns, "--columns", "\"['meterCategory', 'quantity']\""
             )
-            if args.columns is not None
-            else base_cols
-        )
+        else:
+            # Load _default as base, apply overrides
+            _, base_col, base_vals, base_cols = load_default_preset(preset_file)
+            filter_vals = (
+                parse_list_arg(
+                    args.filter,
+                    "--filter",
+                    "\"['SaaS', 'Developer Tools', 'Containers', 'Databases']\"",
+                )
+                if args.filter is not None
+                else base_vals
+            )
+            filter_col = args.filter_column if args.filter_column is not None else base_col
+            columns = (
+                parse_list_arg(
+                    args.columns, "--columns", "\"['meterCategory', 'quantity']\""
+                )
+                if args.columns is not None
+                else base_cols
+            )
 
     # Strip whitespace from all config values to avoid silent mismatches
-    filter_vals = [v.strip() for v in filter_vals]
-    filter_col = filter_col.strip()
+    if filter_vals is not None:
+        filter_vals = [v.strip() for v in filter_vals]
+    if filter_col is not None:
+        filter_col = filter_col.strip()
     columns = [c.strip() for c in columns]
 
     # Save preset and exit — no CSV trimming performed
@@ -331,8 +438,10 @@ def main():
     )
     print(f"  {'─' * (W - 4)}")
     print(f"  Output:        {args.output}")
-    print(f"  Filter column: {filter_col}")
-    print(f"  Filter values: {', '.join(filter_vals)}")
+    if filter_col:
+        print(f"  Filter column: {filter_col}")
+    if filter_vals:
+        print(f"  Filter values: {', '.join(filter_vals)}")
 
     # Print column names wrapped to terminal width
     prefix = "  Columns:      "
@@ -350,7 +459,7 @@ def main():
     # Filter and write output CSV — accumulate all counts in a single pass
     total_input_rows = 0
     total_output_rows = 0
-    filter_counts = {v: 0 for v in filter_vals}
+    filter_counts = {v: 0 for v in filter_vals} if filter_vals else {}
     first_chunk_written = False
     skipped = []
     input_col_count = 0  # total columns in source files (from first valid file)
@@ -371,7 +480,7 @@ def main():
                 .tolist()
             )
 
-            if filter_col not in file_header:
+            if filter_col and filter_col not in file_header:
                 skipped.append((filename, f"'{filter_col}' column not found"))
                 continue
 
@@ -384,11 +493,10 @@ def main():
                 )
 
             # Prepend filter_col to load list if it isn't already in the columns to write
-            cols_to_load = (
-                [filter_col] + cols_to_write
-                if filter_col not in cols_to_write
-                else cols_to_write
-            )
+            if filter_col and filter_col not in cols_to_write:
+                cols_to_load = [filter_col] + cols_to_write
+            else:
+                cols_to_load = cols_to_write
 
             # Capture column counts from the first valid file
             if input_col_count == 0:
@@ -404,13 +512,14 @@ def main():
                 usecols=cols_to_load,
             ):
                 file_input_rows += len(chunk)
-                chunk[filter_col] = chunk[
-                    filter_col
-                ].str.strip()  # strip whitespace from CSV values to match filter values reliably
-                filtered = chunk[chunk[filter_col].isin(filter_vals)]
-                if len(filtered) > 0:
+                if filter_col and filter_vals:
+                    chunk[filter_col] = chunk[filter_col].str.strip()
+                    filtered = chunk[chunk[filter_col].isin(filter_vals)]
                     for val, cnt in filtered[filter_col].value_counts().items():
                         filter_counts[val] += cnt
+                else:
+                    filtered = chunk
+                if len(filtered) > 0:
                     filtered[cols_to_write].to_csv(
                         args.output,
                         mode="w" if not first_chunk_written else "a",
@@ -435,7 +544,7 @@ def main():
         (1 - total_output_rows / total_input_rows) * 100 if total_input_rows else 0
     )
     count_w = len(f"{total_input_rows:,}")
-    val_w = max(len(v) for v in filter_vals)
+    val_w = max(len(v) for v in filter_vals) if filter_vals else 0
 
     # -----------------------------------------------------------------------
     # Compact summary — fits in 80x24
@@ -467,11 +576,12 @@ def main():
         f"  {'Rows removed:':<16}{total_input_rows - total_output_rows:>{count_w},}   ({reduction:.1f}% reduction)"
     )
     rule()
-    print(f"  Rows by {filter_col}:")
-    for val in filter_vals:
-        cnt = filter_counts[val]
-        warn = "  ⚠  no rows!" if cnt == 0 else ""
-        print(f"    {val:<{val_w}}  {cnt:>{count_w},}{warn}")
+    if filter_col and filter_vals:
+        print(f"  Rows by {filter_col}:")
+        for val in filter_vals:
+            cnt = filter_counts[val]
+            warn = "  ⚠  no rows!" if cnt == 0 else ""
+            print(f"    {val:<{val_w}}  {cnt:>{count_w},}{warn}")
     sep()
     print()
 

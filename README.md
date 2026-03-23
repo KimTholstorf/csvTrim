@@ -15,7 +15,8 @@ csvTrim processes a single file or an entire folder of CSVs in one pass and keep
 ## 🪚 Features
 
 - **Row filtering** — keep only rows whose filter column matches a list of values
-- **Column trimming** — drop every column not in your keep list
+- **Column trimming** — drop every column not in your keep list; use `--columns` alone to trim without filtering rows
+- **Inspect mode** — `--inspect` scans headers and lists all column names before you write a preset
 - **Folder processing** — pass a folder path to process all `.csv` files at once
 - **Preset system** — save named filter configurations to `presets.json` and load them by name
 - **Auto-default preset** — run with just `--input` / `--output` to use the preset marked as default
@@ -119,16 +120,17 @@ The setup script installs [uv](https://github.com/astral-sh/uv) if it isn't alre
 
 | Argument | Short | Description |
 |---|---|---|
+| `--version` | `-v` | Print the version and exit. |
+| `--inspect` | `-ins` | List all column names found in the input file(s) and exit. No preset or `--output` needed. |
 | `--input PATH` | `-i` | Single `.csv` file or folder of `.csv` files to process. Required unless `--preset-save` is used. |
 | `--output FILE` | `-o` | Output CSV file path (e.g. `trimmed.csv`). Required unless `--preset-save` is used. |
 | `--excel` | `-e` | Also write an `.xlsx` file alongside the output CSV. Splits into multiple sheets if the row count exceeds Excel's worksheet limit. |
-| `--filter LIST` | `-f` | Python list of values to keep, matched against `--filter-column`. Omit to use the default preset. Example: `"['Compute', 'Storage']"` |
+| `--columns LIST` | `-c` | Python list of column names to keep in the output. Omit to use the default preset. Using `--columns` without `--filter` keeps all rows. Example: `"['meterCategory', 'quantity']"` |
 | `--filter-column COL` | `-fc` | Column name to match filter values against. Omit to use the default preset. |
-| `--columns LIST` | `-c` | Python list of column names to keep in the output. Omit to use the default preset. Example: `"['meterCategory', 'quantity']"` |
+| `--filter LIST` | `-f` | Python list of values to keep, matched against `--filter-column`. Omit to use the default preset. Example: `"['Compute', 'Storage']"` |
 | `--preset NAME` | `-p` | Load all filter settings from a named preset. Overrides `--filter`, `--filter-column`, and `--columns`. If no `--preset` and no individual flags are given, the `_default` preset is loaded automatically. |
 | `--preset-file FILE` | `-pf` | Path to a custom JSON presets file. Defaults to `presets.json` next to the script. |
 | `--preset-save NAME` | `-ps` | Save the current `--filter`, `--filter-column`, and `--columns` as a named preset (or overwrite an existing one). No CSV trimming is performed. |
-| `--version` | `-v` | Print the version and exit. |
 
 ### Flag resolution order
 
@@ -136,13 +138,14 @@ When deciding which filter settings to use, csvTrim applies this priority:
 
 1. **`--preset NAME`** — load everything from the named preset; individual flags are ignored.
 2. **No flags at all** — auto-load the `_default` preset from `presets.json`.
-3. **One or more individual flags** — load the `_default` preset as a base, then apply any explicitly passed flags on top.
+3. **`--columns` only (no `--filter` / `--filter-column`)** — columns-only mode: all rows are kept, only columns are trimmed.
+4. **One or more filter flags** — load the `_default` preset as a base, then apply any explicitly passed flags on top.
 
 ---
 
 ## 💾 Preset system
 
-Presets are stored in a JSON file (`presets.json` by default, next to the script). Each preset holds three values: the column to filter on, which values to keep, and which output columns to retain.
+Presets are stored in a JSON file (`presets.json` by default, next to the script). Each preset holds the column to filter on, which values to keep, and which output columns to retain. `filter_column` and `filter` are optional — a preset with only `columns` skips row filtering entirely and just trims the output to the specified columns.
 The `"_default"` key names which preset to load when no `--preset` or individual flags are given. To change the default, edit the string value — no other changes needed.
 
 ### File format
@@ -235,6 +238,14 @@ csvtrim --preset-save Prod \
   --columns "['serviceFamily', 'meterCategory', 'quantity', 'date']"
 
 csvtrim --input data.csv --output out.csv --preset Prod
+
+# Inspect column names in a file before writing a preset
+csvtrim --input data.csv --inspect
+csvtrim --input ./monthly_exports --inspect
+
+# Columns only — keep all rows, drop unwanted columns
+csvtrim --input data.csv --output out.csv \
+  --columns "['meterCategory', 'quantity', 'date']"
 ```
 
 ---
