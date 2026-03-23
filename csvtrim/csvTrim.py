@@ -10,7 +10,7 @@ import time
 
 import pandas as pd
 
-VERSION = "1.0.5"
+VERSION = "1.0.6"
 PRESETS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "presets.json")
 EXCEL_ROW_LIMIT = 1_048_576
 
@@ -362,48 +362,44 @@ def main():
         _run_inspect(csv_files, len(csv_files))
         sys.exit(0)
 
-    # Resolve filter config: explicit preset, auto-default, or individual flags
+    # Resolve filter config
     preset_file = args.preset_file if args.preset_file else PRESETS_FILE
     if args.preset is not None:
-        # Explicit --preset: all-or-nothing, individual flags are ignored
+        # Named preset as base; any individual flags override on top
         resolved_preset = args.preset
-        filter_col, filter_vals, columns = load_preset(args.preset, preset_file)
+        base_col, base_vals, base_cols = load_preset(args.preset, preset_file)
+        filter_col  = args.filter_column if args.filter_column is not None else base_col
+        filter_vals = (
+            parse_list_arg(args.filter, "--filter",
+                           "\"['SaaS', 'Developer Tools', 'Containers', 'Databases']\"")
+            if args.filter is not None else base_vals
+        )
+        columns = (
+            parse_list_arg(args.columns, "--columns", "\"['meterCategory', 'quantity']\"")
+            if args.columns is not None else base_cols
+        )
     elif args.filter is None and args.filter_column is None and args.columns is None:
         # No flags at all: auto-load the _default preset
-        resolved_preset, filter_col, filter_vals, columns = load_default_preset(
-            preset_file
-        )
+        resolved_preset, filter_col, filter_vals, columns = load_default_preset(preset_file)
     else:
-        # One or more individual flags given
+        # Individual flags only — _default is never loaded
         resolved_preset = None
-        has_filter_flag = args.filter is not None or args.filter_column is not None
-        if args.columns is not None and not has_filter_flag:
-            # Columns only — no filter
-            filter_col = None
-            filter_vals = None
-            columns = parse_list_arg(
-                args.columns, "--columns", "\"['meterCategory', 'quantity']\""
-            )
-        else:
-            # Load _default as base, apply overrides
-            _, base_col, base_vals, base_cols = load_default_preset(preset_file)
-            filter_vals = (
-                parse_list_arg(
-                    args.filter,
-                    "--filter",
-                    "\"['SaaS', 'Developer Tools', 'Containers', 'Databases']\"",
-                )
-                if args.filter is not None
-                else base_vals
-            )
-            filter_col = args.filter_column if args.filter_column is not None else base_col
-            columns = (
-                parse_list_arg(
-                    args.columns, "--columns", "\"['meterCategory', 'quantity']\""
-                )
-                if args.columns is not None
-                else base_cols
-            )
+        if args.filter is not None and args.filter_column is None:
+            parser.error("--filter requires --filter-column")
+        if args.filter_column is not None and args.filter is None:
+            parser.error("--filter-column requires --filter")
+        if (args.filter is not None or args.filter_column is not None) and args.columns is None:
+            parser.error("--columns is required when using --filter and --filter-column")
+        filter_col  = args.filter_column
+        filter_vals = (
+            parse_list_arg(args.filter, "--filter",
+                           "\"['SaaS', 'Developer Tools', 'Containers', 'Databases']\"")
+            if args.filter is not None else None
+        )
+        columns = (
+            parse_list_arg(args.columns, "--columns", "\"['meterCategory', 'quantity']\"")
+            if args.columns is not None else None
+        )
 
     # Strip whitespace from all config values to avoid silent mismatches
     if filter_vals is not None:

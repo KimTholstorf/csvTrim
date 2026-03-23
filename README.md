@@ -125,21 +125,23 @@ The setup script installs [uv](https://github.com/astral-sh/uv) if it isn't alre
 | `--input PATH` | `-i` | Single `.csv` file or folder of `.csv` files to process. Required unless `--preset-save` is used. |
 | `--output FILE` | `-o` | Output CSV file path (e.g. `trimmed.csv`). Required unless `--preset-save` is used. |
 | `--excel` | `-e` | Also write an `.xlsx` file alongside the output CSV. Splits into multiple sheets if the row count exceeds Excel's worksheet limit. |
-| `--columns LIST` | `-c` | Python list of column names to keep in the output. Omit to use the default preset. Using `--columns` without `--filter` keeps all rows. Example: `"['meterCategory', 'quantity']"` |
-| `--filter-column COL` | `-fc` | Column name to match filter values against. Omit to use the default preset. |
-| `--filter LIST` | `-f` | Python list of values to keep, matched against `--filter-column`. Omit to use the default preset. Example: `"['Compute', 'Storage']"` |
-| `--preset NAME` | `-p` | Load all filter settings from a named preset. Overrides `--filter`, `--filter-column`, and `--columns`. If no `--preset` and no individual flags are given, the `_default` preset is loaded automatically. |
+| `--columns LIST` | `-c` | Python list of column names to keep in the output. Used alone (without `--filter`), keeps all rows and only trims columns. Example: `"['meterCategory', 'quantity']"` |
+| `--filter-column COL` | `-fc` | Column to filter rows against. Must be used together with `--filter`. |
+| `--filter LIST` | `-f` | Python list of values to keep, matched against `--filter-column`. Must be used together with `--filter-column`. Example: `"['Compute', 'Storage']"` |
+| `--preset NAME` | `-p` | Load a named preset as the base configuration. Any individual flags passed alongside (`--filter`, `--filter-column`, `--columns`) override the preset's values. If omitted and no individual flags are given, the `_default` preset is loaded automatically. |
 | `--preset-file FILE` | `-pf` | Path to a custom JSON presets file. Defaults to `presets.json` next to the script. |
 | `--preset-save NAME` | `-ps` | Save the current `--filter`, `--filter-column`, and `--columns` as a named preset (or overwrite an existing one). No CSV trimming is performed. |
 
 ### Flag resolution order
 
-When deciding which filter settings to use, csvTrim applies this priority:
+When deciding which settings to use, csvTrim applies this priority:
 
-1. **`--preset NAME`** — load everything from the named preset; individual flags are ignored.
-2. **No flags at all** — auto-load the `_default` preset from `presets.json`.
-3. **`--columns` only (no `--filter` / `--filter-column`)** — columns-only mode: all rows are kept, only columns are trimmed.
-4. **One or more filter flags** — load the `_default` preset as a base, then apply any explicitly passed flags on top.
+1. **`--preset NAME`** — load the named preset as the base. Any individual flags (`--filter`, `--filter-column`, `--columns`) passed alongside override the corresponding preset values; everything else comes from the preset.
+2. **No flags at all** — auto-load the `_default` preset from `presets.json`. This is the zero-config path.
+3. **Individual flags only (no `--preset`)** — use exactly and only what is given. The `_default` preset is never loaded.
+   - `--filter` and `--filter-column` must always be used together.
+   - `--filter` + `--filter-column` also requires `--columns`.
+   - `--columns` alone keeps all rows and only trims columns.
 
 ---
 
@@ -221,11 +223,11 @@ csvtrim --input data.csv --output trimmed.csv --preset Azure
 # Folder of CSVs + Excel output
 csvtrim --input ./monthly_exports --output combined.csv --excel
 
-# Override only the filter values; other settings come from the default preset
+# Override only the filter values; other settings come from the Azure preset
 csvtrim --input data.csv --output out.csv \
-  --filter "['SaaS', 'Developer Tools', 'Containers', 'Databases']"
+  --preset Azure --filter "['SaaS', 'Developer Tools', 'Containers', 'Databases']"
 
-# Fully custom filter (no preset)
+# Fully explicit (no preset) — --filter, --filter-column and --columns all required
 csvtrim --input data.csv --output out.csv \
   --filter-column meterCategory \
   --filter "['Virtual Machines', 'Storage']" \
